@@ -11,7 +11,7 @@ INCLUDES = -I$(BOOST_PATH)
 # LDFLAGS = -L$(BOOST_PATH)/stage/lib
 # LDLIBS = -lboost_system -lboost_graph
 
-all: graph_analysis
+all: source/graph_analysis
 
 graph_analysis: source/main.cpp
 	$(CXX) $(CXXFLAGS) $(INCLUDES) -o $@ $< $(LDFLAGS) $(LDLIBS)
