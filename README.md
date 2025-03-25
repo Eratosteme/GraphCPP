@@ -2,7 +2,7 @@
 Graph C++ app
 
 # installation
-git clone 
+git clone https://github.com/Eratosteme/GraphCPP.git
 
 # compilation
 make
