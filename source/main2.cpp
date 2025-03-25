@@ -20,9 +20,9 @@ struct NodeInfo {
 };
 
 // Structure pour stocker les propriétés des arêtes
-struct EdgeProperties {
+struct EdgeInfo {
     double weight;
-    bool inPath;  // Pour l'illustration de chemin
+    bool inPath;  // Pour le path court
 };
 
 // Définition du type de graphe
@@ -30,35 +30,39 @@ typedef boost::adjacency_list<
     boost::vecS,           // Conteneur pour les arêtes sortantes
     boost::vecS,           // Conteneur pour les sommets
     boost::undirectedS,    // Graphe non orienté
-    NodeInfo,              // Structure de données pour les nœuds
-    EdgeProperties         // Structure de données pour les arêtes
+    NodeInfo,              // Structur pour les nœuds
+    EdgeInfo        // Struct pour les arêtes
 > Graph;
 
 typedef boost::graph_traits<Graph>::vertex_descriptor Vertex;
 typedef boost::graph_traits<Graph>::edge_descriptor Edge;
 
-// Visiteur personnalisé pour détecter les cycles
+// visiteur pour détecter les cycles
+// algorythme depth first car + rapide
 class CycleDetector : public boost::dfs_visitor<> {
 public:
     CycleDetector(bool& hasCycle) : _hasCycle(hasCycle) {}
-
+    /*CycleDetector(bool& hasCycle) {
+        // Initialize the member variable _hasCycle with the value of hasCycle
+        _hasCycle = hasCycle;
+    }*/
     // Examine les arêtes arrières pour détecter les cycles
     template <class Edge, class Graph>
     void back_edge(Edge, const Graph&) {
         _hasCycle = true;
     }
-
 private:
     bool& _hasCycle;
 };
 
 // Fonctions pour charger les données
 std::vector<NodeInfo> loadNodes(const std::string& filename) {
-    std::vector<NodeInfo> nodes;
+    std::vector<NodeInfo> nodes; // on fabrique un vecteur remplie de nodeInfo pour stocker la data
     std::ifstream file(filename);
     
+    // verification classique si le fichier est bien là
     if (!file.is_open()) {
-        std::cerr << "Erreur : Impossible d'ouvrir le fichier " << filename << std::endl;
+        std::cerr << "Erreur lors de l'ouverture du fichier " << filename << std::endl;
         return nodes;
     }
     
@@ -66,18 +70,18 @@ std::vector<NodeInfo> loadNodes(const std::string& filename) {
     
     // Ignorer la première ligne (en-têtes)
     std::getline(file, line);
-    
+    // Parcour le reste du fichier
     while (std::getline(file, line)) {
-        boost::char_separator<char> sep(";");
-        boost::tokenizer<boost::char_separator<char>> tokens(line, sep);
+        boost::char_separator<char> sep(";"); // defini ; comme separateur
+        boost::tokenizer<boost::char_separator<char>> tokens(line, sep); // split la ligne en par ";"
         
-        auto it = tokens.begin();
-        if (it != tokens.end()) {
-            NodeInfo node;
-            node.id = std::stoi(*it++);
-            if (it != tokens.end()) node.x = std::stod(*it++);
-            if (it != tokens.end()) node.y = std::stod(*it++);
-            if (it != tokens.end()) node.z = std::stod(*it++);
+        auto tok = tokens.begin(); //pointeur de départ
+        if (tok != tokens.end()) {
+            NodeInfo node; // creation new node
+            node.id = std::stoi(*tok++); // 1er colonne = ID
+            if (tok != tokens.end()) node.x = std::stod(*tok++);
+            if (tok != tokens.end()) node.y = std::stod(*tok++);
+            if (tok != tokens.end()) node.z = std::stod(*tok++);
             
             nodes.push_back(node);
         }
@@ -86,28 +90,30 @@ std::vector<NodeInfo> loadNodes(const std::string& filename) {
     return nodes;
 }
 
+// voir loadNodes car c'est pareil
+// ! le graph est dejà fait, on ajoute juste arretes
+// d'ou le void
 void loadEdges(Graph& g, const std::string& filename) {
     std::ifstream file(filename);
     
     if (!file.is_open()) {
-        std::cerr << "Erreur : Impossible d'ouvrir le fichier " << filename << std::endl;
+        std::cerr << "Erreur durant l'ouverture du fichier " << filename << std::endl;
         return;
     }
     
     std::string line;
     
-    // Ignorer la première ligne (en-têtes)
     std::getline(file, line);
     
     while (std::getline(file, line)) {
         boost::char_separator<char> sep(";");
         boost::tokenizer<boost::char_separator<char>> tokens(line, sep);
         
-        auto it = tokens.begin();
-        if (it != tokens.end()) {
-            int source = std::stoi(*it++) - 1;  // -1 car les ID commencent à 1 dans le fichier
-            if (it != tokens.end()) {
-                int target = std::stoi(*it++) - 1;  // mais les indices dans le graphe commencent à 0
+        auto tok = tokens.begin();
+        if (tok != tokens.end()) {
+            int source = std::stoi(*tok++) - 1;  // -1 car les ID commencent lign1 dans le fichier csv
+            if (tok != tokens.end()) {
+                int target = std::stoi(*tok++) - 1;  // mais les indices dans le graphe commencent à 0
                 
                 // Vérifier si les indices sont valides
                 if (source >= 0 && source < boost::num_vertices(g) && 
@@ -116,6 +122,7 @@ void loadEdges(Graph& g, const std::string& filename) {
                     double dx = g[source].x - g[target].x;
                     double dy = g[source].y - g[target].y;
                     double dz = g[source].z - g[target].z;
+                    // pythogore
                     double weight = std::sqrt(dx*dx + dy*dy + dz*dz);
                     
                     // Ajouter l'arête au graphe avec son poids
@@ -156,7 +163,7 @@ bool hasCycle(const Graph& g) {
 
 // Fonction pour calculer le chemin le plus court entre deux nœuds
 std::pair<double, std::vector<int>> shortestPath(const Graph& g, int startNodeId, int endNodeId) {
-    int start = startNodeId - 1;  // Convertir de l'ID à l'indice
+    int start = startNodeId - 1;  // Convertir de l'ID à l'indice (le csv rang1 :/)
     int end = endNodeId - 1;
     
     // Vérifier si les indices sont valides
@@ -165,15 +172,17 @@ std::pair<double, std::vector<int>> shortestPath(const Graph& g, int startNodeId
         return {-1, {}};
     }
     
-    // Vecteurs pour stocker les prédécesseurs et les distances
+    // sommet passé
     std::vector<Vertex> predecessor(boost::num_vertices(g));
+    // distances passées
     std::vector<double> distance(boost::num_vertices(g));
     
     // Exécuter l'algorithme de Dijkstra
+    // trouver sur internet/ à verifié
     boost::dijkstra_shortest_paths(g, start, 
         boost::predecessor_map(boost::make_iterator_property_map(predecessor.begin(), boost::get(boost::vertex_index, g)))
         .distance_map(boost::make_iterator_property_map(distance.begin(), boost::get(boost::vertex_index, g)))
-        .weight_map(boost::get(&EdgeProperties::weight, g)));
+        .weight_map(boost::get(&EdgeInfo::weight, g)));
     
     // Reconstruire le chemin
     std::vector<int> path;
@@ -221,6 +230,7 @@ void markPathEdges(Graph& g, const std::vector<int>& path) {
 // Fonction pour générer une illustration du graphe (sortie Graphviz DOT)
 void generateGraphImage(const Graph& g, const std::string& filename) {
     std::ofstream dotFile(filename);
+    std::string pattern = ".png";
     if (!dotFile.is_open()) {
         std::cerr << "Erreur : Impossible de créer le fichier DOT." << std::endl;
         return;
@@ -242,10 +252,23 @@ void generateGraphImage(const Graph& g, const std::string& filename) {
     
     // Écrire le graphe au format DOT
     boost::write_graphviz(dotFile, g, vertex_writer, edge_writer);
-    
+    if (!(filename.find(pattern) != std::string::npos)) { // test si l'utilisateur demande un PNG
     std::cout << "Fichier DOT généré : " << filename << std::endl;
     std::cout << "Pour visualiser le graphe, utilisez Graphviz avec la commande :" << std::endl;
     std::cout << "dot -Tpng " << filename << " -o graph.png" << std::endl;
+    } else {
+    // Command to generate a PNG from a DOT file
+    std::string command = "dot -Tpng " + filename + " -o " + filename;
+    int result = system(command.c_str());
+
+    // Check the result for success or failure
+    if (result == 0) {
+        std::cout << "png successfully!" << std::endl;
+    } else {
+        std::cerr << "Error making png!" << std::endl;
+    }
+    std::cout << "PNG réalsier" << std::endl;
+    }
 }
 
 // Fonction pour écrire les résultats des chemins les plus courts dans un fichier CSV
@@ -312,15 +335,15 @@ void generateGraphReport(Graph& g) {
     // Calculer et afficher le degré du graphe (degré maximum)
     std::cout << "Degré du graphe: " << max_degree << std::endl;
     
-    // ii. Vérifier la connectivité du graphe
+    // Vérifiation la connectivité du graphe
     std::cout << "\n== ii. Connectivité du graphe ==" << std::endl;
     bool connected = isConnected(g);
     std::cout << "Le graphe est " << (connected ? "connecté" : "non connecté") << std::endl;
     
-    // iii. Détection de cycles
+    // Détection de cycles
     std::cout << "\n== iii. Détection de cycles ==" << std::endl;
     bool cycle = hasCycle(g);
-    std::cout << "Le graphe " << (cycle ? "contient" : "ne contient pas") << " de cycle" << std::endl;
+    std::cout << "Le graphe " << (cycle ? "contient":"ne contient pas") << " de cycle" << std::endl;
     std::cout << "Explication de l'algorithme de détection de cycles:" << std::endl;
     std::cout << "1. Utilisation d'un parcours en profondeur (DFS) du graphe" << std::endl;
     std::cout << "2. Lors du parcours, nous maintenons un état pour chaque nœud (non visité, en cours, visité)" << std::endl;
@@ -360,7 +383,7 @@ int main(int argc, char* argv[]) {
     std::string nodes_file = "nodes.csv";
     std::string edges_file = "edges.csv";
     std::string output_csv = "paths.csv";
-    std::string output_dot = "graph.dot";
+    std::string output_dot = "graph.png";
     
     // Utiliser les arguments de ligne de commande si fournis
     if (argc > 1) nodes_file = argv[1];

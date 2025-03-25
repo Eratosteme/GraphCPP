@@ -1,5 +1,5 @@
 CXX = g++
-CXXFLAGS = -std=c++11 -Wall -Wextra
+CXXFLAGS = -std=c++11 -Wall -Wextra -Wno-unused-variable -Wno-unused-parameter -Wno-deprecated-copy
 BOOST_PATH = ../libs/boost_1_82_0
 
 # Si vous avez installé Boost localement, utilisez cette ligne
@@ -14,7 +14,7 @@ INCLUDES = -I$(BOOST_PATH)
 all: output/graph_analysis
 
 output/graph_analysis: source/main2.cpp
-	$(CXX) $(CXXFLAGS) $(INCLUDES) -o $@ $< $(LDFLAGS) $(LDLIBS)
+	$(CXX) $(CXXFLAGS) $(INCLUDES) -o $@ $< $(LDFLAGS) $(LDLIBS) 
 
 output:
 	mkdir -p output
