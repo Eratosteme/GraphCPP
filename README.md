@@ -19,6 +19,7 @@ Ce projet utilise la Boost Graph Library (BGL) pour effectuer diverses analyses 
 git clone https://github.com/Eratosteme/GraphCPP.git
 
 ## compilation
+#### modifier le path de la lybrairy Boost dans makefile (version par default, la librairy est dans un folder à coter du folder git)
 make
 
 ## utilisation (paramètres optionelles)
