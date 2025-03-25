@@ -16,11 +16,15 @@ Ce projet utilise la Boost Graph Library (BGL) pour effectuer diverses analyses 
 - **Graphviz**
 
 ## installation
+```bash
 git clone https://github.com/Eratosteme/GraphCPP.git
-
+```
 ## compilation
 #### modifier le path de la lybrairy Boost dans makefile (version par default, la librairy est dans un folder à coter du folder git)
+```bash
 make
-
+```
 ## utilisation (paramètres optionelles)
+```bash
 ./source/graph_analysis [node_file] [edges_file] [output_csv] [output_graph]
+```
