@@ -313,7 +313,7 @@ void writePathsToCSV(const Graph& g, const std::vector<std::pair<int, int>>& nod
 }
 
 // Fonction principale pour générer le rapport d'analyse du graphe
-void generateGraphReport(Graph& g) {
+void generateGraphReport(Graph& g, int start, int end) {
     std::cout << "=== RAPPORT D'ANALYSE DU GRAPHE ===" << std::endl;
     std::cout << "Nombre de nœuds: " << boost::num_vertices(g) << std::endl;
     std::cout << "Nombre d'arêtes: " << boost::num_edges(g) << std::endl;
@@ -351,9 +351,11 @@ void generateGraphReport(Graph& g) {
     std::cout << "4. L'implémentation utilise le visiteur boost::dfs_visitor qui détecte les arêtes arrière" << std::endl;
     
     // iv. Exemple de calcul de chemin le plus court
-    std::cout << "\n== iv. Exemple de calcul de chemin le plus court ==" << std::endl;
-    int start = 1;  // ID du nœud de départ
-    int end = 20;   // ID du nœud d'arrivée
+    std::cout << "\n== iv. calcul de chemin le plus court ==" << std::endl;
+    std::cout <<"    * node de départ: "<< start <<std::endl;
+    std::cout <<"    * node d'arrivé: "<< end <<std::endl;
+    //int start = 1;  // ID du nœud de départ
+    //int end = 20;   // ID du nœud d'arrivée
     
     auto pathResult = shortestPath(g, start, end);
     double pathLength = pathResult.first;
@@ -381,9 +383,18 @@ void generateGraphReport(Graph& g) {
 int main(int argc, char* argv[]) {
     // Chemins par défaut des fichiers
     std::string nodes_file = "nodes.csv";
+    std::cout << "Veuillez entrer le nom du fichier nodes : "<<std::endl;
+    std::cout << "(ex: nodes.csv)"<<std::endl;
+    std::getline(std::cin, nodes_file);
     std::string edges_file = "edges.csv";
-    std::string output_csv = "paths.csv";
+    std::cout << "Veuillez entrer le nom du fichier edge : "<<std::endl;
+    std::cout << "(ex: edges.csv)"<<std::endl;
+    std::getline(std::cin, edges_file);
+    std::string output_csv = "paths.csv";// ça on ne demande pas
     std::string output_dot = "graph.png";
+    std::cout << "Veuillez entrer le nom du fichier graph : "<<std::endl;
+    std::cout << "(ex: graph.dot ou graph.png)"<<std::endl;
+    std::getline(std::cin, output_dot);
     
     // Utiliser les arguments de ligne de commande si fournis
     if (argc > 1) nodes_file = argv[1];
@@ -421,8 +432,19 @@ int main(int argc, char* argv[]) {
     // Charger les arêtes
     loadEdges(g, edges_file);
     
+    int node1, node2; // Variables to store the user's input
+
+    // Prompt the user for the first number
+    std::cout << "Selection de 2 nodes pour un calcul de chemin" << std::endl;
+    std::cout << "Entrer la node de départ: ";
+    std::cin >> node1;
+
+    // Prompt the user for the second number
+    std::cout << "Entrer la node d'arrivé': ";
+    std::cin >> node2;
+
     // Générer le rapport d'analyse
-    generateGraphReport(g);
+    generateGraphReport(g, node1, node2);
     
     // v. Générer une illustration du graphe
     generateGraphImage(g, output_dot);
